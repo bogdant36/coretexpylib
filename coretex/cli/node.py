@@ -1,4 +1,7 @@
+from typing import Dict
+
 from docker.errors import DockerException, NotFound, APIError
+from rich.progress import Progress
 
 import click
 import docker
@@ -8,6 +11,34 @@ from ..configuration import loadConfig
 
 DOCKER_CONTAINER_NAME = "coretex_node"
 DOCKER_CONTAINER_NETWORK = "coretex_node"
+TASKS: Dict = {}
+
+
+# Show task progress (red for download, green for extract)
+def showProgress(line: dict, progress: Progress) -> None:
+    if line['status'] == 'Downloading':
+        id = f'[red][Download {line["id"]}]'
+    elif line['status'] == 'Extracting':
+        id = f'[green][Extract  {line["id"]}]'
+    else:
+        # skip other statuses
+        return
+
+    if id not in TASKS.keys():
+        TASKS[id] = progress.add_task(f"{id}", total=line['progressDetail']['total'])
+    else:
+        progress.update(TASKS[id], completed=line['progressDetail']['current'])
+
+
+def imagePull(imageName: str) -> None:
+    print(f'Pulling image: {imageName}')
+    with Progress() as progress:
+        client = docker.from_env()
+        resp = client.api.pull(imageName, stream=True, decode=True)
+        for line in resp:
+            showProgress(line, progress)
+        print(type(resp))
+        return resp
 
 
 @click.command()
@@ -15,12 +46,18 @@ def start() -> None:
     try:
         client = docker.from_env()
     except DockerException:
-        click.echo("Please make sure you have docker installed on your machine and it is up and running. If that's the case (troubleshoot?)")
+        click.echo("Please make sure you have docker installed on your machine and it is up and running.\bMake sure you allow the default socket to be used in Docker Desktop Advanced Settings.")
         return
 
     config = loadConfig()
 
-    dockerImage = client.images.pull("coretexai/coretex-node:latest-cpu")
+    print("Pulling docker image.")
+    dockerImage = imagePull("coretexai/coretex-node:latest-cpu")
+    # with Progress() as progress:
+    #     dockerImage = client.api.pull("coretexai/coretex-node:latest-cpu", stream = True, decode = True)
+    #     for line in dockerImage:
+    #         show_progress(line, progress)
+
     dockerContainerConfig = {
         "name": DOCKER_CONTAINER_NAME,
         "environment": {
