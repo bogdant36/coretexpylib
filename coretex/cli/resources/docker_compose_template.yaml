@@ -1,0 +1,53 @@
+version: "3.9"
+services:
+  coretex-node-wsgi:
+    image: {nodeImage}
+    container_name: coretex_node_wsgi_cpu
+    environment:
+      - CTX_NODE_NAME={name}
+      - CTX_API_URL={serverUrl}
+      - CTX_STORAGE_PATH={storagePath}
+      - CTX_NODE_ACCESS_TOKEN={nodeAccessToken}
+    deploy:
+      replicas: 1
+    networks:
+      - coretex_node
+    extra_hosts:
+        - dev.biomechservices.com:192.168.135.10
+    restart: always
+    healthcheck:
+      test: curl -k -f https://localhost:21000/status || exit 1
+      interval: 10s
+      timeout: 20s
+      retries: 20
+      start_period: 10s
+    mem_limit: {nodeRam}
+    memswap_limit: {nodeSwap}
+    shm_size: {nodeSharedMemory}
+    cap_add:
+      - SYS_PTRACE
+    hostname: coretex.node
+  coretex-node-nginx:
+    image: nginx:latest
+    container_name: coretex_node_wsgi_nginx
+    command:
+      - /bin/bash
+      - -c
+      - rm -rf /usr/share/nginx/html/* && nginx -g 'daemon off;'
+    deploy:
+      replicas: 1
+    ports:
+      - 21000:443
+    networks:
+      - coretex_node
+    restart: always
+    volumes:
+      - ./nginx/node.conf:/etc/nginx/conf.d/node.conf
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf
+      - "{certPemPath}/etc/nginx/certificates/cert.pem"
+      - "{keyPemPath}/etc/nginx/certificates/key.pem"
+    depends_on:
+      - coretex-node-wsgi
+networks:
+  coretex_node:
+    name: coretex_node

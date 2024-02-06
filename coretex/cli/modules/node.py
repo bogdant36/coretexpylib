@@ -1,4 +1,4 @@
-from typing import Any, Dict
+from typing import Any, Dict, Optional
 from pathlib import Path
 
 import logging
@@ -10,7 +10,7 @@ from . import docker
 from .utils import isGPUAvailable
 from ...networking import networkManager, NetworkRequestError
 from ...statistics import getAvailableRamMemory
-from ...configuration import loadConfig, saveConfig, isNodeConfigured
+from ...configuration import loadConfig, saveConfig, isNodeConfigured, CONFIG_DIR
 from ...utils import CommandException
 
 
@@ -43,29 +43,48 @@ def isRunning() -> bool:
 def start(dockerImage: str, config: Dict[str, Any]) -> None:
     try:
         click.echo("Starting Coretex Node...")
-        docker.createNetwork(DOCKER_CONTAINER_NETWORK)
 
-        docker.start(
-            DOCKER_CONTAINER_NAME,
-            dockerImage,
-            config["image"],
-            config["serverUrl"],
-            config["storagePath"],
-            config["nodeAccessToken"],
-            config["nodeRam"],
-            config["nodeSwap"],
-            config["nodeSharedMemory"]
-        )
+        if config["isHTTPS"]:
+            docker.startWithNginx(
+                DOCKER_CONTAINER_NAME,
+                dockerImage,
+                config["image"],
+                config["serverUrl"],
+                config["storagePath"],
+                config["nodeAccessToken"],
+                config["nodeRam"],
+                config["nodeSwap"],
+                config["nodeSharedMemory"],
+                # config["nodeMode"],
+                config["certPemPath"],
+                config["keyPemPath"]
+            )
+        else:
+            docker.createNetwork(DOCKER_CONTAINER_NETWORK)
+            docker.start(
+                DOCKER_CONTAINER_NAME,
+                dockerImage,
+                config["image"],
+                config["serverUrl"],
+                config["storagePath"],
+                config["nodeAccessToken"],
+                config["nodeRam"],
+                config["nodeSwap"],
+                config["nodeSharedMemory"]
+            )
         click.echo("Successfully started Coretex Node.")
     except BaseException as ex:
         logging.getLogger("cli").debug(ex, exc_info = ex)
         raise NodeException("Failed to start Coretex Node.")
 
 
-def stop() -> None:
+def stop(isCompose: Optional[bool] = False) -> None:
     try:
         click.echo("Stopping Coretex Node...")
-        docker.stop(DOCKER_CONTAINER_NAME, DOCKER_CONTAINER_NETWORK)
+        if isCompose:
+            docker.stopCompose()
+        else:
+            docker.stop(DOCKER_CONTAINER_NAME, DOCKER_CONTAINER_NETWORK)
         click.echo("Successfully stopped Coretex Node.")
     except BaseException as ex:
         logging.getLogger("cli").debug(ex, exc_info = ex)
@@ -127,6 +146,11 @@ def configureNode(config: Dict[str, Any], verbose: bool) -> None:
         config["nodeRam"] = click.prompt("Node RAM memory limit in GB (press enter to use default)", type = int, default = DEFAULT_RAM_MEMORY)
         config["nodeSwap"] = click.prompt("Node swap memory limit in GB, make sure it is larger than mem limit (press enter to use default)", type = int, default = DEFAULT_SWAP_MEMORY)
         config["nodeSharedMemory"] = click.prompt("Node POSIX shared memory limit in GB (press enter to use default)", type = int, default = DEFAULT_SHARED_MEMORY)
+
+        if click.prompt("Use HTTPS (will prompts for certificates)? (Y/n)", type = bool, default = False):
+            config["isHTTPS"] = True
+            config["certPemPath"] = click.prompt("Enter SSL cert path", type = str)
+            config["keyPemPath"] = click.prompt("ENTER SSL key path", type = str)
     else:
         click.echo("To configure node manually run coretex node config with --verbose flag.")
 

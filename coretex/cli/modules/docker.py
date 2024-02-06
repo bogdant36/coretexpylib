@@ -2,7 +2,12 @@ from typing import Dict, Any
 
 import json
 
+from .nginx import generateNginxConf, generateNodeConf
+from ..resources import RESOURCES_DIR
+from ...configuration import CONFIG_DIR
 from ...utils import command, CommandException
+
+COMPOSE_FILE_NAME = "docker_compose.yaml"
 
 
 def isDockerAvailable() -> None:
@@ -49,6 +54,45 @@ def imagePull(image: str) -> None:
     command(["docker", "image", "pull", image], ignoreStdout = True)
 
 
+def generateComposeScript(
+    image: str,
+    name: str,
+    serverUrl: str,
+    storagePath: str,
+    nodeAccessToken: str,
+    # nodeMode: int,
+    nodeRam: str,
+    nodeSwap: str,
+    nodeSharedMemory: str,
+    certPemPath: str,
+    keyPemPath: str
+) -> None:
+
+    composeTemplatePath = RESOURCES_DIR / "docker_compose_template.yaml"
+    with composeTemplatePath.open("r") as composeTemplateFile:
+        composeTemplate = composeTemplateFile.read()
+
+        composeData = composeTemplate.format(
+            nodeImage = image,
+            name = name,
+            serverUrl = serverUrl,
+            storagePath = storagePath,
+            nodeAccessToken = nodeAccessToken,
+            # nodeMode = nodeMode,
+            nodeRam = nodeRam,
+            nodeSwap = nodeSwap,
+            nodeSharedMemory = nodeSharedMemory,
+            certPemPath = certPemPath,
+            keyPemPath = keyPemPath
+        )
+
+    composeScriptPath = CONFIG_DIR / COMPOSE_FILE_NAME
+    generateNodeConf()
+    generateNginxConf()
+    with composeScriptPath.open("w") as composeScriptFile:
+        composeScriptFile.write(composeData)
+
+
 def start(
     name: str,
     dockerImage: str,
@@ -74,6 +118,7 @@ def start(
         "--memory-swap", f"{nodeSwap}G",
         "--shm-size", f"{nodeSharedMemory}G",
         "--name", name,
+        "--hostname", "coretex.node",
     ]
 
     if imageType == "gpu":
@@ -81,6 +126,43 @@ def start(
 
     runCommand.append(dockerImage)
     command(runCommand, ignoreStdout = True)
+
+
+def startWithNginx(
+    name: str,
+    dockerImage: str,
+    imageType: str,
+    serverUrl: str,
+    storagePath: str,
+    nodeAccessToken: str,
+    # nodeMode: int,
+    nodeRam: int,
+    nodeSwap: int,
+    nodeSharedMemory: int,
+    certPemPath: str,
+    keyPemPath: str
+
+) -> None:
+
+    generateComposeScript(
+        dockerImage,
+        name,
+        serverUrl,
+        storagePath,
+        nodeAccessToken,
+        # nodeMode,
+        f"{nodeRam}G",
+        f"{nodeSwap}G",
+        f"{nodeSharedMemory}G",
+        certPemPath,
+        keyPemPath
+    )
+
+    command(["docker-compose", "-f", f"{CONFIG_DIR / COMPOSE_FILE_NAME}", "up", "-d"], ignoreStdout = True, ignoreStderr = True)
+
+
+def stopCompose() -> None:
+    command(["docker-compose", "-f",  f"{CONFIG_DIR / COMPOSE_FILE_NAME}", "down", "--remove-orphans"], ignoreStdout = True, ignoreStderr = True)
 
 
 def stopContainer(name: str) -> None:

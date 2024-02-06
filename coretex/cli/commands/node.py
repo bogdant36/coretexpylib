@@ -26,7 +26,7 @@ def start() -> None:
         ):
             return
 
-        node_module.stop()
+        node_module.stop(config.get("isHTTPS", False))
 
     if node_module.shouldUpdate(repository, tag):
         node_module.pull("coretexai/coretex-node", f"latest-{config['image']}")
@@ -38,11 +38,12 @@ def start() -> None:
 
 @click.command()
 def stop() -> None:
+    config = loadConfig()
     if not node_module.isRunning():
         click.echo("Node is already offline.")
         return
 
-    node_module.stop()
+    node_module.stop(config.get("isHTTPS", False))
 
 
 @click.command()
@@ -70,7 +71,7 @@ def update() -> None:
         ):
             return
 
-        node_module.stop()
+        node_module.stop(config.get("isHTTPS", False))
 
     if not node_module.shouldUpdate(repository, tag):
         click.echo("Node is already up to date.")
@@ -86,7 +87,7 @@ def update() -> None:
         ):
             return
 
-    node_module.stop()
+    node_module.stop(config.get("isHTTPS", False))
 
     node_module.start(f"{repository}:{tag}", config)
 
@@ -100,7 +101,7 @@ def config(verbose: bool) -> None:
             default = True,
             show_default = False
         ):
-            node_module.stop()
+            node_module.stop(config.get("isHTTPS", False))
 
         click.echo("If you wish to reconfigure your node, use \"coretex node stop\" command first.")
         return
