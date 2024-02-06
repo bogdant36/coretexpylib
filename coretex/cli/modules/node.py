@@ -2,12 +2,15 @@ from typing import Any, Dict, Optional
 from pathlib import Path
 
 import logging
+import shutil
 
 import click
 
 from . import docker
 
 from .utils import isGPUAvailable
+from .nginx import NGINX_DIR
+from ..resources import UPDATE_SCRIPT_NAME
 from ...networking import networkManager, NetworkRequestError
 from ...statistics import getAvailableRamMemory
 from ...configuration import loadConfig, saveConfig, isNodeConfigured, CONFIG_DIR
@@ -83,8 +86,12 @@ def stop(isCompose: Optional[bool] = False) -> None:
         click.echo("Stopping Coretex Node...")
         if isCompose:
             docker.stopCompose()
+            shutil.rmtree(NGINX_DIR)
         else:
             docker.stop(DOCKER_CONTAINER_NAME, DOCKER_CONTAINER_NETWORK)
+
+        (CONFIG_DIR / UPDATE_SCRIPT_NAME).unlink(missing_ok = True)
+        (CONFIG_DIR / docker.COMPOSE_FILE_NAME).unlink(missing_ok = True)
         click.echo("Successfully stopped Coretex Node.")
     except BaseException as ex:
         logging.getLogger("cli").debug(ex, exc_info = ex)
@@ -140,6 +147,9 @@ def configureNode(config: Dict[str, Any], verbose: bool) -> None:
     config["nodeRam"] = DEFAULT_RAM_MEMORY
     config["nodeSwap"] = DEFAULT_SWAP_MEMORY
     config["nodeSharedMemory"] = DEFAULT_SHARED_MEMORY
+    config["isHTTPS"] = False
+    config["certPemPath"] = None
+    config["keyPemPath"] = None
 
     if verbose:
         config["storagePath"] = click.prompt("Storage path (press enter to use default)", DEFAULT_STORAGE_PATH, type = str)

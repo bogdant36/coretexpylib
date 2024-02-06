@@ -1,9 +1,8 @@
-from pathlib import Path
-
 import click
 
+from ..resources import UPDATE_SCRIPT_NAME
 from ..modules import node as node_module
-from ..modules.update import NodeStatus, getNodeStatus, activateAutoUpdate, dumpScript, UPDATE_SCRIPT_NAME
+from ..modules.update import NodeStatus, getNodeStatus, activateAutoUpdate, dumpScript
 from ..modules.utils import onBeforeCommandExecute
 from ..modules.user import initializeUserSession
 from ..modules.docker import isDockerAvailable
@@ -95,6 +94,8 @@ def update() -> None:
 @click.command()
 @click.option("--verbose", is_flag = True, help = "Configure node settings manually.")
 def config(verbose: bool) -> None:
+    config = loadConfig()
+
     if node_module.isRunning():
         if click.prompt("Node is already running. Do you wish to stop the Node? (Y/n)",
             type = bool,
@@ -105,8 +106,6 @@ def config(verbose: bool) -> None:
 
         click.echo("If you wish to reconfigure your node, use \"coretex node stop\" command first.")
         return
-
-    config = loadConfig()
 
     if isNodeConfigured(config):
         if not click.prompt(

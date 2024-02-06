@@ -2,7 +2,7 @@ from typing import Dict, Any
 
 import json
 
-from .nginx import generateNginxConf, generateNodeConf
+from .nginx import generateConfigFiles
 from ..resources import RESOURCES_DIR
 from ...configuration import CONFIG_DIR
 from ...utils import command, CommandException
@@ -87,8 +87,7 @@ def generateComposeScript(
         )
 
     composeScriptPath = CONFIG_DIR / COMPOSE_FILE_NAME
-    generateNodeConf()
-    generateNginxConf()
+    generateConfigFiles()
     with composeScriptPath.open("w") as composeScriptFile:
         composeScriptFile.write(composeData)
 

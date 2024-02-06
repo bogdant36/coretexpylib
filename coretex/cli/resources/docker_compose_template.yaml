@@ -44,8 +44,8 @@ services:
     volumes:
       - ./nginx/node.conf:/etc/nginx/conf.d/node.conf
       - ./nginx/nginx.conf:/etc/nginx/nginx.conf
-      - "{certPemPath}/etc/nginx/certificates/cert.pem"
-      - "{keyPemPath}/etc/nginx/certificates/key.pem"
+      - "{certPemPath}:/etc/nginx/certificates/cert.pem"
+      - "{keyPemPath}:/etc/nginx/certificates/key.pem"
     depends_on:
       - coretex-node-wsgi
 networks:

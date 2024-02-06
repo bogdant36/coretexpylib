@@ -1,1 +1,1 @@
-from .resources import RESOURCES_DIR
+from .resources import RESOURCES_DIR, UPDATE_SCRIPT_NAME
