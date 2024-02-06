@@ -60,10 +60,10 @@ def generateComposeScript(
     serverUrl: str,
     storagePath: str,
     nodeAccessToken: str,
-    # nodeMode: int,
     nodeRam: str,
     nodeSwap: str,
     nodeSharedMemory: str,
+    nodeMode: int,
     certPemPath: str,
     keyPemPath: str
 ) -> None:
@@ -78,7 +78,7 @@ def generateComposeScript(
             serverUrl = serverUrl,
             storagePath = storagePath,
             nodeAccessToken = nodeAccessToken,
-            # nodeMode = nodeMode,
+            nodeMode = nodeMode,
             nodeRam = nodeRam,
             nodeSwap = nodeSwap,
             nodeSharedMemory = nodeSharedMemory,
@@ -102,6 +102,7 @@ def start(
     nodeRam: int,
     nodeSwap: int,
     nodeSharedMemory: int,
+    nodeMode: int
 ) -> None:
 
     runCommand = [
@@ -109,6 +110,7 @@ def start(
         "--env", f"CTX_API_URL={serverUrl}",
         "--env", f"CTX_STORAGE_PATH={storagePath}",
         "--env", f"CTX_NODE_ACCESS_TOKEN={nodeAccessToken}",
+        "--env", f"CTX_NODE_MODE={nodeMode}",
         "--restart", 'always',
         "-p", "21000:21000",
         "--cap-add", "SYS_PTRACE",
@@ -134,10 +136,10 @@ def startWithNginx(
     serverUrl: str,
     storagePath: str,
     nodeAccessToken: str,
-    # nodeMode: int,
     nodeRam: int,
     nodeSwap: int,
     nodeSharedMemory: int,
+    nodeMode: int,
     certPemPath: str,
     keyPemPath: str
 
@@ -149,10 +151,10 @@ def startWithNginx(
         serverUrl,
         storagePath,
         nodeAccessToken,
-        # nodeMode,
         f"{nodeRam}G",
         f"{nodeSwap}G",
         f"{nodeSharedMemory}G",
+        nodeMode,
         certPemPath,
         keyPemPath
     )

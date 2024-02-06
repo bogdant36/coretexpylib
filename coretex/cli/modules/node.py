@@ -1,20 +1,20 @@
-from typing import Any, Dict, Optional
+from typing import Any, Dict, Tuple, Optional
 from pathlib import Path
 
 import logging
 import shutil
 
-import click
-
 from . import docker
-
 from .utils import isGPUAvailable
 from .nginx import NGINX_DIR
+from .ui import clickPrompt, arrowPrompt, highlightEcho, errorEcho, progressEcho, successEcho, stdEcho
+from .node_mode import NodeMode
 from ..resources import UPDATE_SCRIPT_NAME
 from ...networking import networkManager, NetworkRequestError
 from ...statistics import getAvailableRamMemory
 from ...configuration import loadConfig, saveConfig, isNodeConfigured, CONFIG_DIR
 from ...utils import CommandException
+from ...entities.model import Model
 
 
 DOCKER_CONTAINER_NAME = "coretex_node"
@@ -31,12 +31,12 @@ class NodeException(Exception):
 
 def pull(repository: str, tag: str) -> None:
     try:
-        click.echo("Fetching latest node version...")
+        progressEcho("Fetching latest node version...")
         docker.imagePull(f"{repository}:{tag}")
-        click.echo("Latest node version successfully fetched.")
+        successEcho("Latest node version successfully fetched.")
     except BaseException as ex:
         logging.getLogger("cli").debug(ex, exc_info = ex)
-        raise NodeException("Failed to fetch latest node version")
+        raise NodeException("Failed to fetch latest node version.")
 
 
 def isRunning() -> bool:
@@ -45,8 +45,7 @@ def isRunning() -> bool:
 
 def start(dockerImage: str, config: Dict[str, Any]) -> None:
     try:
-        click.echo("Starting Coretex Node...")
-
+        progressEcho("Starting Coretex Node...")
         if config["isHTTPS"]:
             docker.startWithNginx(
                 DOCKER_CONTAINER_NAME,
@@ -58,7 +57,7 @@ def start(dockerImage: str, config: Dict[str, Any]) -> None:
                 config["nodeRam"],
                 config["nodeSwap"],
                 config["nodeSharedMemory"],
-                # config["nodeMode"],
+                config["nodeMode"],
                 config["certPemPath"],
                 config["keyPemPath"]
             )
@@ -73,9 +72,10 @@ def start(dockerImage: str, config: Dict[str, Any]) -> None:
                 config["nodeAccessToken"],
                 config["nodeRam"],
                 config["nodeSwap"],
-                config["nodeSharedMemory"]
+                config["nodeSharedMemory"],
+                config["nodeMode"]
             )
-        click.echo("Successfully started Coretex Node.")
+        successEcho("Successfully started Coretex Node.")
     except BaseException as ex:
         logging.getLogger("cli").debug(ex, exc_info = ex)
         raise NodeException("Failed to start Coretex Node.")
@@ -83,7 +83,7 @@ def start(dockerImage: str, config: Dict[str, Any]) -> None:
 
 def stop(isCompose: Optional[bool] = False) -> None:
     try:
-        click.echo("Stopping Coretex Node...")
+        progressEcho("Stopping Coretex Node...")
         if isCompose:
             docker.stopCompose()
             shutil.rmtree(NGINX_DIR)
@@ -92,7 +92,7 @@ def stop(isCompose: Optional[bool] = False) -> None:
 
         (CONFIG_DIR / UPDATE_SCRIPT_NAME).unlink(missing_ok = True)
         (CONFIG_DIR / docker.COMPOSE_FILE_NAME).unlink(missing_ok = True)
-        click.echo("Successfully stopped Coretex Node.")
+        successEcho("Successfully stopped Coretex Node.")
     except BaseException as ex:
         logging.getLogger("cli").debug(ex, exc_info = ex)
         raise NodeException("Failed to stop Coretex Node.")
@@ -133,12 +133,51 @@ def registerNode(name: str) -> str:
     return accessToken
 
 
+def selectModelId(retryCount: int = 0) -> int:
+    if retryCount >= 3:
+        raise RuntimeError("Failed to fetch Coretex Model. Terminating...")
+
+    modelId = clickPrompt("Specify Coretex Model ID that you want to use:", type = int)
+
+    if not isinstance(modelId, int):
+        raise TypeError(f"Invalid modelId type \"{type(modelId)}\". Expected: \"int\"")
+
+    try:
+        model = Model.fetchById(modelId)
+    except:
+        errorEcho(f"Failed to fetch model with id {modelId}.")
+        return selectModelId(retryCount + 1)
+
+    model.download()
+
+    return modelId
+
+
+def selectNodeMode() -> Tuple[int, Optional[int]]:
+    availableNodeModes = {
+        "Execution": NodeMode.execution,
+        "Function exclusive": NodeMode.functionExclusive,
+        "Function shared": NodeMode.functionShared
+    }
+    choices = list(availableNodeModes.keys())
+
+    stdEcho("Please select Coretex Node mode:")
+    selectedMode = arrowPrompt(choices)
+
+    if not availableNodeModes[selectedMode] == NodeMode.functionExclusive:
+        return availableNodeModes[selectedMode], None
+
+    modelId = selectModelId()
+    return availableNodeModes[selectedMode], modelId
+
+
 def configureNode(config: Dict[str, Any], verbose: bool) -> None:
-    config["nodeName"] = click.prompt("Node name", type = str)
+    highlightEcho("[Node Configuration]")
+    config["nodeName"] = clickPrompt("Node name", type = str)
     config["nodeAccessToken"] = registerNode(config["nodeName"])
 
     if isGPUAvailable():
-        isGPU = click.prompt("Do you want to allow the Node to access your GPU? (Y/n)", type = bool, default = True)
+        isGPU = clickPrompt("Do you want to allow the Node to access your GPU? (Y/n)", type = bool, default = True)
         config["image"] = "gpu" if isGPU else "cpu"
     else:
         config["image"] = "cpu"
@@ -152,17 +191,22 @@ def configureNode(config: Dict[str, Any], verbose: bool) -> None:
     config["keyPemPath"] = None
 
     if verbose:
-        config["storagePath"] = click.prompt("Storage path (press enter to use default)", DEFAULT_STORAGE_PATH, type = str)
-        config["nodeRam"] = click.prompt("Node RAM memory limit in GB (press enter to use default)", type = int, default = DEFAULT_RAM_MEMORY)
-        config["nodeSwap"] = click.prompt("Node swap memory limit in GB, make sure it is larger than mem limit (press enter to use default)", type = int, default = DEFAULT_SWAP_MEMORY)
-        config["nodeSharedMemory"] = click.prompt("Node POSIX shared memory limit in GB (press enter to use default)", type = int, default = DEFAULT_SHARED_MEMORY)
+        config["storagePath"] = clickPrompt("Storage path (press enter to use default)", DEFAULT_STORAGE_PATH, type = str)
+        config["nodeRam"] = clickPrompt("Node RAM memory limit in GB (press enter to use default)", type = int, default = DEFAULT_RAM_MEMORY)
+        config["nodeSwap"] = clickPrompt("Node swap memory limit in GB, make sure it is larger than mem limit (press enter to use default)", type = int, default = DEFAULT_SWAP_MEMORY)
+        config["nodeSharedMemory"] = clickPrompt("Node POSIX shared memory limit in GB (press enter to use default)", type = int, default = DEFAULT_SHARED_MEMORY)
 
-        if click.prompt("Use HTTPS (will prompts for certificates)? (Y/n)", type = bool, default = False):
+        if clickPrompt("Use HTTPS (will prompts for certificates)? (Y/n)", type = bool, default = False):
             config["isHTTPS"] = True
-            config["certPemPath"] = click.prompt("Enter SSL cert path", type = str)
-            config["keyPemPath"] = click.prompt("ENTER SSL key path", type = str)
+            config["certPemPath"] = clickPrompt("Enter SSL cert path", type = str)
+            config["keyPemPath"] = clickPrompt("ENTER SSL key path", type = str)
+
+        nodeMode, modelId = selectNodeMode()
+        config["nodeMode"] = nodeMode
+        if modelId is not None:
+            config["modelId"] = modelId
     else:
-        click.echo("To configure node manually run coretex node config with --verbose flag.")
+        stdEcho("To configure node manually run coretex node config with --verbose flag.")
 
 
 def initializeNodeConfiguration() -> None:
@@ -171,9 +215,9 @@ def initializeNodeConfiguration() -> None:
     if isNodeConfigured(config):
         return
 
-    click.echo("Node configuration not found.")
+    errorEcho("Node configuration not found.")
     if isRunning():
-        stopNode = click.prompt(
+        stopNode = clickPrompt(
             "Node is already running. Do you wish to stop the Node? (Y/n)",
             type = bool,
             default = True,
@@ -181,11 +225,10 @@ def initializeNodeConfiguration() -> None:
         )
 
         if not stopNode:
-            click.echo("If you wish to reconfigure your node, use \"coretex node stop\" command first.")
+            errorEcho("If you wish to reconfigure your node, use \"coretex node stop\" command first.")
             return
 
         stop()
 
-    click.echo("[Node Configuration]")
     configureNode(config, verbose = False)
     saveConfig(config)
