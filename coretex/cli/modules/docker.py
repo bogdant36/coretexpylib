@@ -69,7 +69,7 @@ def generateComposeScript(
     keyPemPath: str
 ) -> None:
 
-    composeTemplatePath = RESOURCES_DIR / "docker_compose_template.yaml"
+    composeTemplatePath = RESOURCES_DIR / "docker_compose_template.txt"
 
     gpuComposeUtilize = '''
         resources:
