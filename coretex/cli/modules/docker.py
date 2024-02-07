@@ -71,11 +71,11 @@ def generateComposeScript(
 
     composeTemplatePath = RESOURCES_DIR / "docker_compose_template.yaml"
 
-    if imageType == "gpu":
-        gpuCapabilities = '''
-        reservations:
-            devices:
-                - capabilities: [gpu]
+    gpuComposeUtilize = '''
+        resources:
+            reservations:
+                devices:
+                    - capabilities: [gpu]
         '''
 
     with composeTemplatePath.open("r") as composeTemplateFile:
@@ -84,7 +84,7 @@ def generateComposeScript(
         composeData = composeTemplate.format(
             nodeImage = image,
             name = name,
-            gpuCapabilities = gpuCapabilities.strip(),
+            gpuCapabilities = gpuComposeUtilize.strip() if imageType == "gpu" else "",
             serverUrl = serverUrl,
             storagePath = storagePath,
             nodeAccessToken = nodeAccessToken,

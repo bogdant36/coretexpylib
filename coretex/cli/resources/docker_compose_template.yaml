@@ -10,8 +10,7 @@ services:
       - CTX_NODE_ACCESS_TOKEN={nodeAccessToken}
     deploy:
       replicas: 1
-      resources:
-        {gpuCapabilities}
+      {gpuCapabilities}
     networks:
       - coretex_node
     extra_hosts:
