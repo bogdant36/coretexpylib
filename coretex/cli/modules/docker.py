@@ -57,6 +57,7 @@ def imagePull(image: str) -> None:
 def generateComposeScript(
     image: str,
     name: str,
+    imageType: str,
     serverUrl: str,
     storagePath: str,
     nodeAccessToken: str,
@@ -69,12 +70,21 @@ def generateComposeScript(
 ) -> None:
 
     composeTemplatePath = RESOURCES_DIR / "docker_compose_template.yaml"
+
+    if imageType == "gpu":
+        gpuCapabilities = '''
+        reservations:
+            devices:
+                - capabilities: [gpu]
+        '''
+
     with composeTemplatePath.open("r") as composeTemplateFile:
         composeTemplate = composeTemplateFile.read()
 
         composeData = composeTemplate.format(
             nodeImage = image,
             name = name,
+            gpuCapabilities = gpuCapabilities.strip(),
             serverUrl = serverUrl,
             storagePath = storagePath,
             nodeAccessToken = nodeAccessToken,
@@ -149,6 +159,7 @@ def startWithNginx(
     generateComposeScript(
         dockerImage,
         name,
+        imageType,
         serverUrl,
         storagePath,
         nodeAccessToken,

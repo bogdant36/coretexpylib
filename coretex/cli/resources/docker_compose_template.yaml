@@ -11,8 +11,7 @@ services:
     deploy:
       replicas: 1
       resources:
-        reservations:
-          devices: [{gpuCapabilities}]
+        {gpuCapabilities}
     networks:
       - coretex_node
     extra_hosts:
