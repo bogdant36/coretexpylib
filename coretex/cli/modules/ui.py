@@ -1,11 +1,7 @@
-from typing import Any, List, Dict, Optional
-
-from tabulate import tabulate
+from typing import Any, List, Optional
 
 import click
 import inquirer
-
-from .node_mode import NodeMode
 
 
 def clickPrompt(text: str, default: Any = None, type: Optional[type] = None, **kwargs: Any) -> Any:
@@ -23,22 +19,6 @@ def arrowPrompt(choices: List[Any]) -> Any:
     ])
 
     return answers["option"]
-
-
-def previewConfig(config: Dict[str, Any]) -> None:
-    table = [
-        ["Node name", config["nodeName"]],
-        ["Server URL", config["serverUrl"]],
-        ["Storage path", config["storagePath"]],
-        ["RAM", f"{config['nodeRam']}GB"],
-        ["SWAP memory", f"{config['nodeSwap']}GB"],
-        ["POSIX shared memory", f"{config['nodeSharedMemory']}GB"],
-        ["Coretex Node mode", f"{NodeMode(config['nodeMode']).name}"],
-    ]
-    if config.get("modelId") is not None:
-        table.append(["Coretex Model ID", config["modelId"]])
-
-    stdEcho(tabulate(table, tablefmt = "grid"))
 
 
 def stdEcho(text: str) -> None:

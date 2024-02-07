@@ -1,8 +1,9 @@
 import click
 
+from ..config import CLIConfig
 from ..resources import UPDATE_SCRIPT_NAME
 from ..modules import node as node_module
-from ..modules.ui import clickPrompt, successEcho, errorEcho, previewConfig
+from ..modules.ui import clickPrompt, successEcho, errorEcho
 from ..modules.update import NodeStatus, getNodeStatus, activateAutoUpdate, dumpScript, UPDATE_SCRIPT_NAME
 from ..modules.utils import onBeforeCommandExecute
 from ..modules.user import initializeUserSession
@@ -13,9 +14,9 @@ from ...configuration import loadConfig, saveConfig, CONFIG_DIR, isNodeConfigure
 @click.command()
 @onBeforeCommandExecute(node_module.initializeNodeConfiguration)
 def start() -> None:
-    config = loadConfig()
+    config = CLIConfig.load()
     repository = "coretexai/coretex-node"
-    tag = f"latest-{config['image']}"
+    tag = f"latest-{config.nodeImage}"
 
     if node_module.isRunning():
         if not clickPrompt(
@@ -26,10 +27,10 @@ def start() -> None:
         ):
             return
 
-        node_module.stop(config.get("isHTTPS", False))
+        node_module.stop(config.isHTTPS)
 
     if node_module.shouldUpdate(repository, tag):
-        node_module.pull("coretexai/coretex-node", f"latest-{config['image']}")
+        node_module.pull("coretexai/coretex-node", f"latest-{config.nodeImage}")
 
     node_module.start(f"{repository}:{tag}", config)
 
@@ -38,20 +39,20 @@ def start() -> None:
 
 @click.command()
 def stop() -> None:
-    config = loadConfig()
+    config = CLIConfig.load()
     if not node_module.isRunning():
         errorEcho("Node is already offline.")
         return
 
-    node_module.stop(config.get("isHTTPS", False))
+    node_module.stop(config.isHTTPS)
 
 
 @click.command
 @onBeforeCommandExecute(node_module.initializeNodeConfiguration)
 def update() -> None:
-    config = loadConfig()
+    config = CLIConfig.load()
     repository = "coretexai/coretex-node"
-    tag = f"latest-{config['image']}"
+    tag = f"latest-{config.nodeImage}"
 
     nodeStatus = getNodeStatus()
 
@@ -72,7 +73,7 @@ def update() -> None:
         ):
             return
 
-        node_module.stop(config.get("isHTTPS", False))
+        node_module.stop(config.isHTTPS)
 
     if not node_module.shouldUpdate(repository, tag):
         successEcho("Node is already up to date.")
@@ -89,7 +90,7 @@ def update() -> None:
         ):
             return
 
-    node_module.stop(config.get("isHTTPS", False))
+    node_module.stop(config.isHTTPS)
 
     node_module.start(f"{repository}:{tag}", config)
 
@@ -97,7 +98,7 @@ def update() -> None:
 @click.command()
 @click.option("--verbose", is_flag = True, help = "Configure node settings manually.")
 def config(verbose: bool) -> None:
-    config = loadConfig()
+    config = CLIConfig.load()
 
     if node_module.isRunning():
         if not clickPrompt(
@@ -109,9 +110,9 @@ def config(verbose: bool) -> None:
             errorEcho("If you wish to reconfigure your node, use coretex node stop commands first.")
             return
 
-        node_module.stop(config.get("isHTTPS", False))
+        node_module.stop(config.isHTTPS)
 
-    if isNodeConfigured(config):
+    if config.isNodeValid():
         if not clickPrompt(
             "Node configuration already exists. Would you like to update? (Y/n)",
             type = bool,
@@ -121,8 +122,8 @@ def config(verbose: bool) -> None:
             return
 
     node_module.configureNode(config, verbose)
-    saveConfig(config)
-    previewConfig(config)
+    config.save()
+    config.previewConfig()
 
     # Updating auto-update script since node configuration is changed
     dumpScript(CONFIG_DIR / UPDATE_SCRIPT_NAME, config)

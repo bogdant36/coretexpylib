@@ -9,6 +9,7 @@ from .utils import isGPUAvailable
 from .nginx import NGINX_DIR
 from .ui import clickPrompt, arrowPrompt, highlightEcho, errorEcho, progressEcho, successEcho, stdEcho
 from .node_mode import NodeMode
+from ..config import CLIConfig
 from ..resources import UPDATE_SCRIPT_NAME
 from ...networking import networkManager, NetworkRequestError
 from ...statistics import getAvailableRamMemory
@@ -43,37 +44,37 @@ def isRunning() -> bool:
     return docker.containerExists(DOCKER_CONTAINER_NAME)
 
 
-def start(dockerImage: str, config: Dict[str, Any]) -> None:
+def start(dockerImage: str, config: CLIConfig) -> None:
     try:
         progressEcho("Starting Coretex Node...")
-        if config["isHTTPS"]:
+        if config.isHTTPS and config.certPemPath is not None and config.keyPemPath is not None:
             docker.startWithNginx(
                 DOCKER_CONTAINER_NAME,
                 dockerImage,
-                config["image"],
-                config["serverUrl"],
-                config["storagePath"],
-                config["nodeAccessToken"],
-                config["nodeRam"],
-                config["nodeSwap"],
-                config["nodeSharedMemory"],
-                config["nodeMode"],
-                config["certPemPath"],
-                config["keyPemPath"]
+                config.nodeImage,
+                config.serverUrl,
+                config.storagePath,
+                config.nodeAccessToken,
+                config.nodeRam,
+                config.nodeSwap,
+                config.nodeShared,
+                config.nodeMode,
+                config.certPemPath,
+                config.keyPemPath
             )
         else:
             docker.createNetwork(DOCKER_CONTAINER_NETWORK)
             docker.start(
                 DOCKER_CONTAINER_NAME,
                 dockerImage,
-                config["image"],
-                config["serverUrl"],
-                config["storagePath"],
-                config["nodeAccessToken"],
-                config["nodeRam"],
-                config["nodeSwap"],
-                config["nodeSharedMemory"],
-                config["nodeMode"]
+                config.nodeImage,
+                config.serverUrl,
+                config.storagePath,
+                config.nodeAccessToken,
+                config.nodeRam,
+                config.nodeSwap,
+                config.nodeShared,
+                config.nodeMode
             )
         successEcho("Successfully started Coretex Node.")
     except BaseException as ex:
@@ -171,48 +172,50 @@ def selectNodeMode() -> Tuple[int, Optional[int]]:
     return availableNodeModes[selectedMode], modelId
 
 
-def configureNode(config: Dict[str, Any], verbose: bool) -> None:
+def configureNode(config: CLIConfig, verbose: bool) -> None:
     highlightEcho("[Node Configuration]")
-    config["nodeName"] = clickPrompt("Node name", type = str)
-    config["nodeAccessToken"] = registerNode(config["nodeName"])
+    config.nodeName = clickPrompt("Node name", type = str)
+    config.nodeAccessToken = registerNode(config.nodeName)
 
     if isGPUAvailable():
         isGPU = clickPrompt("Do you want to allow the Node to access your GPU? (Y/n)", type = bool, default = True)
-        config["image"] = "gpu" if isGPU else "cpu"
+        config.nodeImage = "gpu" if isGPU else "cpu"
     else:
-        config["image"] = "cpu"
+        config.nodeImage = "cpu"
 
-    config["storagePath"] = DEFAULT_STORAGE_PATH
-    config["nodeRam"] = DEFAULT_RAM_MEMORY
-    config["nodeSwap"] = DEFAULT_SWAP_MEMORY
-    config["nodeSharedMemory"] = DEFAULT_SHARED_MEMORY
-    config["isHTTPS"] = False
-    config["certPemPath"] = None
-    config["keyPemPath"] = None
+    config.storagePath = DEFAULT_STORAGE_PATH
+    config.nodeRam = DEFAULT_RAM_MEMORY
+    config.nodeSwap = DEFAULT_SWAP_MEMORY
+    config.nodeShared = DEFAULT_SHARED_MEMORY
+    config.isHTTPS = False
+    config.certPemPath = None
+    config.keyPemPath = None
 
     if verbose:
-        config["storagePath"] = clickPrompt("Storage path (press enter to use default)", DEFAULT_STORAGE_PATH, type = str)
-        config["nodeRam"] = clickPrompt("Node RAM memory limit in GB (press enter to use default)", type = int, default = DEFAULT_RAM_MEMORY)
-        config["nodeSwap"] = clickPrompt("Node swap memory limit in GB, make sure it is larger than mem limit (press enter to use default)", type = int, default = DEFAULT_SWAP_MEMORY)
-        config["nodeSharedMemory"] = clickPrompt("Node POSIX shared memory limit in GB (press enter to use default)", type = int, default = DEFAULT_SHARED_MEMORY)
+        config.storagePath = clickPrompt("Storage path (press enter to use default)", DEFAULT_STORAGE_PATH, type = str)
+        config.nodeRam = clickPrompt("Node RAM memory limit in GB (press enter to use default)", type = int, default = DEFAULT_RAM_MEMORY)
+        config.nodeSwap = clickPrompt("Node swap memory limit in GB, make sure it is larger than mem limit (press enter to use default)", type = int, default = DEFAULT_SWAP_MEMORY)
+        config.nodeShared = clickPrompt("Node POSIX shared memory limit in GB (press enter to use default)", type = int, default = DEFAULT_SHARED_MEMORY)
 
         if clickPrompt("Use HTTPS (will prompts for certificates)? (Y/n)", type = bool, default = False):
-            config["isHTTPS"] = True
-            config["certPemPath"] = clickPrompt("Enter SSL cert path", type = str)
-            config["keyPemPath"] = clickPrompt("ENTER SSL key path", type = str)
+            config.isHTTPS = True
+            config.certPemPath = clickPrompt("Enter SSL cert path", type = str)
+            config.keyPemPath = clickPrompt("ENTER SSL key path", type = str)
 
         nodeMode, modelId = selectNodeMode()
-        config["nodeMode"] = nodeMode
+        config.nodeMode = nodeMode
         if modelId is not None:
-            config["modelId"] = modelId
+            config.modelId = modelId
     else:
         stdEcho("To configure node manually run coretex node config with --verbose flag.")
 
+    config.save()
+
 
 def initializeNodeConfiguration() -> None:
-    config = loadConfig()
+    config = CLIConfig.load()
 
-    if isNodeConfigured(config):
+    if config.isNodeValid():
         return
 
     errorEcho("Node configuration not found.")
@@ -231,4 +234,4 @@ def initializeNodeConfiguration() -> None:
         stop()
 
     configureNode(config, verbose = False)
-    saveConfig(config)
+    config.save()

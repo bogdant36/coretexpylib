@@ -1,1 +1,1 @@
-from .cli_config import CLIConfig
+from .configuration import CLIConfig

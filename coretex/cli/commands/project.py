@@ -2,16 +2,16 @@ from typing import Optional
 
 import click
 
+from ..config import CLIConfig
 from ..modules.ui import arrowPrompt, stdEcho, successEcho, progressEcho, errorEcho
 from ... import Project, ProjectType
 from ...networking import NetworkRequestError
-from ...configuration import loadConfig, saveConfig
 
 
 def selectProject(projectId: int) -> None:
-    config = loadConfig()
-    config["projectId"] = projectId
-    saveConfig(config)
+    config = CLIConfig.load()
+    config.projectId = projectId
+    config.save()
 
 
 def selectProjectType() -> ProjectType:

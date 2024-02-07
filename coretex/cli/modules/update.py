@@ -6,6 +6,7 @@ import requests
 
 from .cron import jobExists, scheduleJob
 from .node import DOCKER_CONTAINER_NAME, DOCKER_CONTAINER_NETWORK
+from ..config import CLIConfig
 from ..resources import RESOURCES_DIR, UPDATE_SCRIPT_NAME
 from ...utils import command
 from ...configuration import CONFIG_DIR
@@ -20,7 +21,7 @@ class NodeStatus(IntEnum):
     reconnecting = 5
 
 
-def generateUpdateScript(config: Dict[str, Any]) -> str:
+def generateUpdateScript(config: CLIConfig) -> str:
     _, dockerPath, _ = command(["which", "docker"], ignoreStdout = True, ignoreStderr = True)
     bashScriptTemplatePath = RESOURCES_DIR / "update_script_template.sh"
 
@@ -30,29 +31,29 @@ def generateUpdateScript(config: Dict[str, Any]) -> str:
     return bashScriptTemplate.format(
         dockerPath = dockerPath.strip(),
         repository = "coretexai/coretex-node",
-        tag = f"latest-{config['image']}",
-        serverUrl = config["serverUrl"],
-        storagePath = config["storagePath"],
-        nodeAccessToken = config["nodeAccessToken"],
+        tag = f"latest-{config.nodeImage}",
+        serverUrl = config.serverUrl,
+        storagePath = config.storagePath,
+        nodeAccessToken = config.nodeAccessToken,
         containerName = DOCKER_CONTAINER_NAME,
         networkName = DOCKER_CONTAINER_NETWORK,
         restartPolicy = "always",
         ports = "21000:21000",
         capAdd = "SYS_PTRACE",
-        ramMemory = config["nodeRam"],
-        swapMemory = config["nodeSwap"],
-        sharedMemory = config["nodeSharedMemory"]
+        ramMemory = config.nodeRam,
+        swapMemory = config.nodeSwap,
+        sharedMemory = config.nodeShared
     )
 
 
-def dumpScript(updateScriptPath: Path, config: Dict[str, Any]) -> None:
+def dumpScript(updateScriptPath: Path, config: CLIConfig) -> None:
     with updateScriptPath.open("w") as scriptFile:
         scriptFile.write(generateUpdateScript(config))
 
     command(["chmod", "+x", str(updateScriptPath)], ignoreStdout = True)
 
 
-def activateAutoUpdate(configDir: Path, config: Dict[str, Any]) -> None:
+def activateAutoUpdate(configDir: Path, config: CLIConfig) -> None:
     updateScriptPath = CONFIG_DIR / UPDATE_SCRIPT_NAME
     dumpScript(updateScriptPath, config)
 
