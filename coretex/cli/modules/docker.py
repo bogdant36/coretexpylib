@@ -87,9 +87,10 @@ def generateComposeScript(
         )
 
     composeScriptPath = CONFIG_DIR / COMPOSE_FILE_NAME
-    generateConfigFiles()
     with composeScriptPath.open("w") as composeScriptFile:
         composeScriptFile.write(composeData)
+
+    generateConfigFiles()
 
 
 def start(
