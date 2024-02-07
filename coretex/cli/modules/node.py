@@ -1,4 +1,4 @@
-from typing import Any, Dict, Tuple, Optional
+from typing import Tuple, Optional
 from pathlib import Path
 
 import logging
@@ -13,7 +13,7 @@ from ..config import CLIConfig
 from ..resources import UPDATE_SCRIPT_NAME
 from ...networking import networkManager, NetworkRequestError
 from ...statistics import getAvailableRamMemory
-from ...configuration import loadConfig, saveConfig, isNodeConfigured, CONFIG_DIR
+from ...configuration import CONFIG_DIR
 from ...utils import CommandException
 from ...entities.model import Model
 

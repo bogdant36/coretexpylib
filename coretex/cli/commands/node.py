@@ -8,7 +8,7 @@ from ..modules.update import NodeStatus, getNodeStatus, activateAutoUpdate, dump
 from ..modules.utils import onBeforeCommandExecute
 from ..modules.user import initializeUserSession
 from ..modules.docker import isDockerAvailable
-from ...configuration import loadConfig, saveConfig, CONFIG_DIR, isNodeConfigured
+from ...configuration import CONFIG_DIR
 
 
 @click.command()

@@ -1,12 +1,9 @@
-from typing import Dict, Any
-from dataclasses import dataclass
 from datetime import datetime, timezone
 
 from .ui import clickPrompt, errorEcho, progressEcho
 from ..config import CLIConfig
 from ...utils import decodeDate
 from ...networking import networkManager, NetworkResponse, NetworkRequestError
-from ...configuration import loadConfig, saveConfig
 from ..config.login_info import LoginInfo
 
 def authenticateUser(username: str, password: str) -> NetworkResponse:

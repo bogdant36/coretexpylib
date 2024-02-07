@@ -63,7 +63,7 @@ def _loadConfiguration(configPath: Path) -> Dict[str, Any]:
 
     return config
 
-
+# confusing to me
 def _syncConfigWithEnv() -> None:
     configPath = Path("~/.config/coretex/config.json").expanduser()
 

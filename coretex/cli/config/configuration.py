@@ -2,6 +2,7 @@ from typing import Optional, List, Any
 from typing_extensions import Self
 from pathlib import Path
 
+import os
 import json
 
 from coretex.cli.modules.node_mode import NodeMode
@@ -56,7 +57,7 @@ class CLIConfig():
 
         self = cls()
 
-        serverUrl = config.get("serverUrl", "https://devext.biomechservices.com:29007/")
+        serverUrl = config.get("serverUrl", os.environ["CTX_API_URL"])
         if not isinstance(serverUrl, str):
             serverUrl = "https://devext.biomechservices.com:29007/"
 

@@ -1,4 +1,4 @@
-from typing import List, Any, Optional, Callable, TypeVar, Type
+from typing import List, Any, Optional, Callable
 from functools import wraps
 
 from py3nvml import py3nvml
