@@ -48,12 +48,12 @@ def authenticate(retryCount: int = 0) -> LoginInfo:
 def initializeUserSession() -> None:
     config = CLIConfig.load()
 
-    if config.username is '' or config.password is '':
+    if config.username == '' or config.password == '':
         errorEcho("User configuration not found. Please authenticate with your credentials.")
         loginInfo = authenticate()
         config.saveLoginData(loginInfo)
     else:
-        if config.tokenExpirationDate is not '' and config.refreshTokenExpirationDate is not '':
+        if config.tokenExpirationDate != '' and config.refreshTokenExpirationDate != '':
             tokenExpirationDate = decodeDate(config.tokenExpirationDate)
             refreshTokenExpirationDate = decodeDate(config.refreshTokenExpirationDate)
 

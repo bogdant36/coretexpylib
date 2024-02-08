@@ -248,8 +248,29 @@ class CLIConfig():
         return self
 
     def save(self) -> None:
-        config = vars(self)
-        print(config)
+        config = {
+            "serverUrl": self.serverUrl,
+            "username": self.username,
+            "password": self.password,
+            "token": self.token,
+            "refreshToken": self.refreshToken,
+            "tokenExpirationDate": self.tokenExpirationDate,
+            "refreshTokenExpirationDate": self.refreshTokenExpirationDate,
+            "nodeName": self.nodeName,
+            "nodeAccessToken": self.nodeAccessToken,
+            "nodeImage": self.nodeImage,
+            "nodeRam": self.nodeRam,
+            "nodeSwap": self.nodeSwap,
+            "nodeShared": self.nodeShared,
+            "nodeMode": self.nodeMode,
+            "modelId": self.modelId,
+            "isHTTPS": self.isHTTPS,
+            "certPemPath": self.certPemPath,
+            "keyPemPath": self.keyPemPath,
+            "storagePath": self.storagePath,
+            "projectId": self.projectId
+        }
+
         with open(DEFAULT_CONFIG_PATH, "w+") as configFile:
             json.dump(config, configFile, indent=4)
 
