@@ -8,7 +8,7 @@ from .node import DOCKER_CONTAINER_NAME, DOCKER_CONTAINER_NETWORK
 from ..config import CLIConfig
 from ..resources import RESOURCES_DIR, UPDATE_SCRIPT_NAME
 from ...utils import command
-from ...configuration import CONFIG_DIR
+from ..config.configuration import CONFIG_DIR
 
 
 class NodeStatus(IntEnum):
@@ -34,6 +34,7 @@ def generateUpdateScript(config: CLIConfig) -> str:
         serverUrl = config.serverUrl,
         storagePath = config.storagePath,
         nodeAccessToken = config.nodeAccessToken,
+        nodeMode = config.nodeMode,
         containerName = DOCKER_CONTAINER_NAME,
         networkName = DOCKER_CONTAINER_NETWORK,
         restartPolicy = "always",

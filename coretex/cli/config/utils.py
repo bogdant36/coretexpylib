@@ -8,16 +8,12 @@ GetType = TypeVar("GetType")
 def typedGet(
     container: Dict[KeyType, Any],
     key: KeyType,
-    type_: Type[GetType],
-    default: Optional[GetType] = None
-) -> Optional[GetType]:
+    type_: Type[GetType]
+) -> GetType:
 
     value = container.get(key)
 
-    if value is None:
-        return default
-
     if not isinstance(value, type_):
-        return default
+        raise TypeError("Type error....")  # TODO
 
     return value

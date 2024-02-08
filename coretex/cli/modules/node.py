@@ -9,21 +9,15 @@ from .utils import isGPUAvailable
 from .nginx import NGINX_DIR
 from .ui import clickPrompt, arrowPrompt, highlightEcho, errorEcho, progressEcho, successEcho, stdEcho
 from .node_mode import NodeMode
-from ..config import CLIConfig
+from ..config import NodeConfiguration, CONFIG_DIR
 from ..resources import UPDATE_SCRIPT_NAME
 from ...networking import networkManager, NetworkRequestError
-from ...statistics import getAvailableRamMemory
-from ...configuration import CONFIG_DIR
 from ...utils import CommandException
 from ...entities.model import Model
 
 
 DOCKER_CONTAINER_NAME = "coretex_node"
 DOCKER_CONTAINER_NETWORK = "coretex_node"
-DEFAULT_STORAGE_PATH = str(Path.home() / "./coretex")
-DEFAULT_RAM_MEMORY = getAvailableRamMemory()
-DEFAULT_SWAP_MEMORY = DEFAULT_RAM_MEMORY * 2
-DEFAULT_SHARED_MEMORY = 2
 
 
 class NodeException(Exception):
@@ -44,21 +38,21 @@ def isRunning() -> bool:
     return docker.containerExists(DOCKER_CONTAINER_NAME)
 
 
-def start(dockerImage: str, config: CLIConfig) -> None:
+def start(dockerImage: str, config: NodeConfiguration) -> None:
     try:
         progressEcho("Starting Coretex Node...")
         if config.isHTTPS and config.certPemPath is not None and config.keyPemPath is not None:
             docker.startWithNginx(
                 DOCKER_CONTAINER_NAME,
                 dockerImage,
-                config.nodeImage,
+                config.image,
                 config.serverUrl,
                 config.storagePath,
-                config.nodeAccessToken,
-                config.nodeRam,
-                config.nodeSwap,
-                config.nodeShared,
-                config.nodeMode,
+                config.accessToken,
+                config.ram,
+                config.swap,
+                config.shm,
+                config.mode,
                 config.certPemPath,
                 config.keyPemPath
             )
@@ -67,14 +61,14 @@ def start(dockerImage: str, config: CLIConfig) -> None:
             docker.start(
                 DOCKER_CONTAINER_NAME,
                 dockerImage,
-                config.nodeImage,
+                config.image,
                 config.serverUrl,
                 config.storagePath,
-                config.nodeAccessToken,
-                config.nodeRam,
-                config.nodeSwap,
-                config.nodeShared,
-                config.nodeMode
+                config.accessToken,
+                config.ram,
+                config.swap,
+                config.shm,
+                config.mode
             )
         successEcho("Successfully started Coretex Node.")
     except BaseException as ex:
@@ -138,10 +132,7 @@ def selectModelId(retryCount: int = 0) -> int:
     if retryCount >= 3:
         raise RuntimeError("Failed to fetch Coretex Model. Terminating...")
 
-    modelId = clickPrompt("Specify Coretex Model ID that you want to use:", type = int)
-
-    if not isinstance(modelId, int):
-        raise TypeError(f"Invalid modelId type \"{type(modelId)}\". Expected: \"int\"")
+    modelId: int = clickPrompt("Specify Coretex Model ID that you want to use:", type = int)
 
     try:
         model = Model.fetchById(modelId)
@@ -165,28 +156,29 @@ def selectNodeMode() -> Tuple[int, Optional[int]]:
     stdEcho("Please select Coretex Node mode:")
     selectedMode = arrowPrompt(choices)
 
-    if not availableNodeModes[selectedMode] == NodeMode.functionExclusive:
-        return availableNodeModes[selectedMode], None
+    if availableNodeModes[selectedMode] == NodeMode.functionExclusive:
+        modelId = selectModelId()
+        return availableNodeModes[selectedMode], modelId
 
-    modelId = selectModelId()
-    return availableNodeModes[selectedMode], modelId
+    return availableNodeModes[selectedMode], None
 
 
-def configureNode(config: CLIConfig, verbose: bool) -> None:
+def configureNode(config: NodeConfiguration, verbose: bool) -> None:
     highlightEcho("[Node Configuration]")
-    config.nodeName = clickPrompt("Node name", type = str)
-    config.nodeAccessToken = registerNode(config.nodeName)
+    config.name = clickPrompt("Node name", type = str)
+    config.accessToken = registerNode(config.name)
 
     if isGPUAvailable():
         isGPU = clickPrompt("Do you want to allow the Node to access your GPU? (Y/n)", type = bool, default = True)
-        config.nodeImage = "gpu" if isGPU else "cpu"
+        config.image = "gpu" if isGPU else "cpu"
     else:
-        config.nodeImage = "cpu"
+        config.image = "cpu"
 
     config.storagePath = DEFAULT_STORAGE_PATH
-    config.nodeRam = DEFAULT_RAM_MEMORY
-    config.nodeSwap = DEFAULT_SWAP_MEMORY
-    config.nodeShared = DEFAULT_SHARED_MEMORY
+    config.ram = DEFAULT_RAM_MEMORY
+    config.swap = DEFAULT_SWAP_MEMORY
+    config.shm = DEFAULT_SHARED_MEMORY
+    config.mode = DEFAULT_NODE_MODE
     config.isHTTPS = False
     config.certPemPath = None
     config.keyPemPath = None
@@ -203,7 +195,7 @@ def configureNode(config: CLIConfig, verbose: bool) -> None:
             config.keyPemPath = clickPrompt("ENTER SSL key path", type = str)
 
         nodeMode, modelId = selectNodeMode()
-        config.nodeMode = nodeMode
+        config.mode = nodeMode
         if modelId is not None:
             config.modelId = modelId
     else:
@@ -213,7 +205,7 @@ def configureNode(config: CLIConfig, verbose: bool) -> None:
 
 
 def initializeNodeConfiguration() -> None:
-    config = CLIConfig.load()
+    config = NodeConfiguration.load()
 
     if config.isNodeValid():
         return

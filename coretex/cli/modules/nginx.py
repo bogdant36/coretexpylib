@@ -1,8 +1,7 @@
 import shutil
 
 from ..resources import RESOURCES_DIR
-from ...configuration import CONFIG_DIR
-
+from ..config.configuration import CONFIG_DIR
 
 NGINX_DIR = CONFIG_DIR / "nginx"
 

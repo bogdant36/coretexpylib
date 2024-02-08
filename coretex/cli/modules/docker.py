@@ -4,7 +4,7 @@ import json
 
 from .nginx import generateConfigFiles
 from ..resources import RESOURCES_DIR
-from ...configuration import CONFIG_DIR
+from ..config.configuration import CONFIG_DIR
 from ...utils import command, CommandException
 
 COMPOSE_FILE_NAME = "docker_compose.yaml"
