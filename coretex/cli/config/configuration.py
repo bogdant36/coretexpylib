@@ -23,29 +23,189 @@ class CLIConfig():
     def __init__(self) -> None:
         self.serverUrl: str = "https://devext.biomechservices.com:29007/"
 
-        self.username: Optional[str] = None
-        self.password: Optional[str] = None
+        self._username: Optional[str] = None
+        self._password: Optional[str] = None
 
-        self.token: Optional[str] = None
-        self.refreshToken: Optional[str] = None
-        self.tokenExpirationDate: Optional[str] = None
-        self.refreshTokenExpirationDate: Optional[str] = None
+        self._token: Optional[str] = None
+        self._refreshToken: Optional[str] = None
+        self._tokenExpirationDate: Optional[str] = None
+        self._refreshTokenExpirationDate: Optional[str] = None
 
-        self.nodeName: Optional[str] = None
-        self.nodeAccessToken: Optional[str] = None
-        self.nodeImage: Optional[str] = None
-        self.nodeRam: Optional[int] = None
-        self.nodeSwap: Optional[int] = None
-        self.nodeShared: Optional[int] = None
-        self.nodeMode: Optional[int] = None
-        self.modelId: Optional[int] = None
+        self._nodeName: Optional[str] = None
+        self._nodeAccessToken: Optional[str] = None
+        self._nodeImage: Optional[str] = None
+        self._nodeRam: Optional[int] = None
+        self._nodeSwap: Optional[int] = None
+        self._nodeShared: Optional[int] = None
+        self._nodeMode: Optional[int] = None
+        self._modelId: Optional[int] = None
 
-        self.isHTTPS: Optional[bool] = None
+        self._isHTTPS: Optional[bool] = None
         self.certPemPath: Optional[str] = None
         self.keyPemPath: Optional[str] = None
 
-        self.storagePath: Optional[str] = None
+        self._storagePath: Optional[str] = None
         self.projectId: Optional[int] = None
+
+    @property
+    def username(self) -> str:
+        if self._username is None:
+            return ''
+        return self._username
+
+    @username.setter
+    def username(self, value: Optional[str]) -> None:
+        self._username = value
+
+    @property
+    def password(self) -> str:
+        if self._password is None:
+            return ''
+        return self._password
+
+    @password.setter
+    def password(self, value: Optional[str]) -> None:
+        self._password = value
+
+    @property
+    def token(self) -> str:
+        if self._token is None:
+            return ''
+        return self._token
+
+    @token.setter
+    def token(self, value: Optional[str]) -> None:
+        self._token = value
+
+    @property
+    def tokenExpirationDate(self) -> str:
+        if self._tokenExpirationDate is None:
+            return ''
+        return self._tokenExpirationDate
+
+    @tokenExpirationDate.setter
+    def tokenExpirationDate(self, value: Optional[str]) -> None:
+        self._tokenExpirationDate = value
+
+    @property
+    def refreshToken(self) -> str:
+        if self._refreshToken is None:
+            return ''
+        return self._refreshToken
+
+    @refreshToken.setter
+    def refreshToken(self, value: Optional[str]) -> None:
+        self._refreshToken = value
+
+    @property
+    def refreshTokenExpirationDate(self) -> str:
+        if self._refreshTokenExpirationDate is None:
+            return ''
+        return self._refreshTokenExpirationDate
+
+    @refreshTokenExpirationDate.setter
+    def refreshTokenExpirationDate(self, value: Optional[str]) -> None:
+        self._refreshTokenExpirationDate = value
+
+    @property
+    def nodeName(self) -> str:
+        if self._nodeName is None:
+            return ''
+        return self._nodeName
+
+    @nodeName.setter
+    def nodeName(self, value: Optional[str]) -> None:
+        self._nodeName = value
+
+    @property
+    def nodeAccessToken(self) -> str:
+        if self._nodeAccessToken is None:
+            return ''
+        return self._nodeAccessToken
+
+    @nodeAccessToken.setter
+    def nodeAccessToken(self, value: Optional[str]) -> None:
+        self._nodeAccessToken = value
+
+    @property
+    def nodeImage(self) -> str:
+        if self._nodeImage is None:
+            return "cpu"
+        return self._nodeImage
+
+    @nodeImage.setter
+    def nodeImage(self, value: Optional[str]) -> None:
+        self._nodeImage = value
+
+    @property
+    def nodeRam(self) -> int:
+        if self._nodeRam is None:
+            return 1
+        return self._nodeRam
+
+    @nodeRam.setter
+    def nodeRam(self, value: Optional[int]) -> None:
+        self._nodeRam = value
+
+    @property
+    def nodeSwap(self) -> int:
+        if self._nodeSwap is None:
+            return 1
+        return self._nodeSwap
+
+    @nodeSwap.setter
+    def nodeSwap(self, value: Optional[int]) -> None:
+        self._nodeSwap = value
+
+    @property
+    def nodeShared(self) -> int:
+        if self._nodeShared is None:
+            return 1
+        return self._nodeShared
+
+    @nodeShared.setter
+    def nodeShared(self, value: Optional[int]) -> None:
+        self._nodeShared = value
+
+    @property
+    def nodeMode(self) -> int:
+        if self._nodeMode is None:
+            return NodeMode.execution
+        return self._nodeMode
+
+    @nodeMode.setter
+    def nodeMode(self, value: Optional[int]) -> None:
+        self._nodeMode = value
+
+    @property
+    def modelId(self) -> int:
+        if self._modelId is None:
+            return 1
+        return self._modelId
+
+    @modelId.setter
+    def modelId(self, value: Optional[int]) -> None:
+        self._modelId = value
+
+    @property
+    def isHTTPS(self) -> bool:
+        if self._isHTTPS is None:
+            return False
+        return self._isHTTPS
+
+    @isHTTPS.setter
+    def isHTTPS(self, value: Optional[bool]) -> None:
+        self._isHTTPS = value
+
+    @property
+    def storagePath(self) -> str:
+        if self._storagePath is None:
+            return ''
+        return self._storagePath
+
+    @storagePath.setter
+    def storagePath(self, value: Optional[str]) -> None:
+        self._storagePath = value
 
     @classmethod
     def load(cls) -> Self:
@@ -62,27 +222,27 @@ class CLIConfig():
             serverUrl = "https://devext.biomechservices.com:29007/"
 
         self.serverUrl = serverUrl
-        self.username = typedGet(config, "username", str)
-        self.password = typedGet(config, "password", str)
+        self._username = typedGet(config, "username", str)
+        self._password = typedGet(config, "password", str)
 
-        self.token = typedGet(config, "token", str)
-        self.refreshToken = typedGet(config, "refreshToken", str)
-        self.tokenExpirationDate = typedGet(config, "tokenExpirationDate", str)
-        self.refreshTokenExpirationDate = typedGet(config, "refreshTokenExpirationDate", str)
+        self._token = typedGet(config, "token", str)
+        self._refreshToken = typedGet(config, "refreshToken", str)
+        self._tokenExpirationDate = typedGet(config, "tokenExpirationDate", str)
+        self._refreshTokenExpirationDate = typedGet(config, "refreshTokenExpirationDate", str)
 
-        self.nodeName = typedGet(config, "nodeName", str)
-        self.nodeImage = typedGet(config, "nodeImage", str)
-        self.nodeRam = typedGet(config, "nodeRam", int)
-        self.nodeSwap = typedGet(config, "nodeSwap", int)
-        self.nodeShared = typedGet(config, "nodeShared", int)
-        self.nodeMode = typedGet(config, "nodeMode", int)
-        self.modelId = typedGet(config, "modelId", int)
+        self._nodeName = typedGet(config, "nodeName", str)
+        self._nodeImage = typedGet(config, "nodeImage", str)
+        self._nodeRam = typedGet(config, "nodeRam", int)
+        self._nodeSwap = typedGet(config, "nodeSwap", int)
+        self._nodeShared = typedGet(config, "nodeShared", int)
+        self._nodeMode = typedGet(config, "nodeMode", int)
+        self._modelId = typedGet(config, "modelId", int)
 
-        self.isHTTPS = typedGet(config, "isHTTPS", bool)
+        self._isHTTPS = typedGet(config, "isHTTPS", bool)
         self.certPemPath = typedGet(config, "certPemPath", str)
         self.keyPemPath = typedGet(config, "keyPemPath", str)
 
-        self.storagePath = typedGet(config, "storagePath", str)
+        self._storagePath = typedGet(config, "storagePath", str)
         self.projectId = typedGet(config, "projectId", int)
 
         return self
@@ -114,12 +274,12 @@ class CLIConfig():
         )
 
     def saveLoginData(self, loginInfo: LoginInfo) -> None:
-        self.username = loginInfo.username
-        self.password = loginInfo.password
-        self.token = loginInfo.token
-        self.tokenExpirationDate = loginInfo.tokenExpirationDate
-        self.refreshToken = loginInfo.refreshToken
-        self.refreshToken = loginInfo.refreshTokenExpirationDate
+        self._username = loginInfo.username
+        self._password = loginInfo.password
+        self._token = loginInfo.token
+        self._tokenExpirationDate = loginInfo.tokenExpirationDate
+        self._refreshToken = loginInfo.refreshToken
+        self._refreshToken = loginInfo.refreshTokenExpirationDate
 
 
     def previewConfig(self) -> None:
