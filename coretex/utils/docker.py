@@ -2,14 +2,11 @@ from typing import Dict, Any, List, Tuple
 
 import json
 
-<<<<<<< HEAD:coretex/cli/modules/docker.py
 from .nginx import generateConfigFiles
 from ..resources import RESOURCES_DIR
 from ...configuration import CONFIG_DIR
 from ...utils import command, CommandException
-=======
 from .process import command, CommandException
->>>>>>> develop:coretex/utils/docker.py
 
 COMPOSE_FILE_NAME = "docker_compose.yaml"
 

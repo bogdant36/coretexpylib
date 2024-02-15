@@ -42,7 +42,8 @@ def generateUpdateScript(config: Dict[str, Any]) -> str:
         capAdd = "SYS_PTRACE",
         ramMemory = config["nodeRam"],
         swapMemory = config["nodeSwap"],
-        sharedMemory = config["nodeSharedMemory"]
+        sharedMemory = config["nodeSharedMemory"],
+        imageType = config["image"]
     )
 
 
