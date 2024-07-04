@@ -108,9 +108,9 @@ def update(autoAccept: bool, autoDecline: bool) -> None:
 
         node_module.stop()
 
-    if not node_module.shouldUpdate(dockerImage):
-        successEcho("Node is already up to date.")
-        return
+    # if not node_module.shouldUpdate(dockerImage):
+    #     successEcho("Node is already up to date.")
+    #     return
 
     stdEcho("Updating node...")
     node_module.pull(dockerImage)

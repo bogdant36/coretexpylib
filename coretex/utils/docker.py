@@ -2,6 +2,7 @@ from typing import Dict, Any, List, Tuple, Optional
 from pathlib import Path
 
 import json
+import logging
 import platform
 
 from .process import command, CommandException
@@ -124,7 +125,8 @@ def stopContainer(name: str) -> None:
 
 
 def removeContainer(name: str) -> None:
-    command(["docker", "rm", name], ignoreStdout = True, ignoreStderr = True)
+    _, _, err = command(["docker", "rm", name], ignoreStdout = True, ignoreStderr = True)
+    logging.getLogger("cli").debug(f"Remove failed with err: {err}")
 
 
 def manifestInspect(image: str) -> Dict[str, Any]:
