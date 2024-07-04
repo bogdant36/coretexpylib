@@ -2,6 +2,7 @@ from typing import Dict, Any, List, Tuple, Optional
 from pathlib import Path
 
 import json
+import logging
 import platform
 
 from .process import command, CommandException
@@ -113,6 +114,7 @@ def start(
 
     # Docker image must always be the last parameter of docker run command
     runCommand.append(image)
+    logging.getLogger("cli").debug(" ".join(runCommand))
     command(runCommand, ignoreStdout = True, ignoreStderr = True)
 
 
