@@ -44,6 +44,14 @@ DEFAULT_CONFIG_PATH = CONFIG_DIR / "config.json"
 DEFAULT_VENV_PATH = CONFIG_DIR / "venv"
 
 
+def isAutoUpdateRuntime() -> bool:
+    executablePath = sys.argv[0]
+    return (
+        executablePath == str(DEFAULT_VENV_PATH.joinpath("bin", "coretex")) and
+        os.access(executablePath, os.X_OK)
+    )
+
+
 DEFAULT_CONFIG: Dict[str, Any] = {
     # os.environ used directly here since we don't wanna
     # set those variables to any value if they don't exist

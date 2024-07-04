@@ -21,11 +21,13 @@ _syncConfigWithEnv()
 
 
 # Internal - not for outside use
-from ._logger import _initializeDefaultLogger, _initializeCLILogger
-from .configuration import isCliRuntime
+from ._logger import _initializeDefaultLogger, _initializeCLILogger, _initializeAutoUpdateLogger
+from .configuration import isCliRuntime, isAutoUpdateRuntime
 
 
-if isCliRuntime():
+if isAutoUpdateRuntime():
+    _initializeAutoUpdateLogger()
+elif isCliRuntime():
     _initializeCLILogger()
 else:
     _initializeDefaultLogger()

@@ -35,3 +35,11 @@ def _initializeCLILogger() -> None:
     logPath.mkdir(exist_ok = True)
 
     initializeLogger(LogSeverity.info, logPath.joinpath(logName).with_suffix(".log"), jsonOutput = False)
+
+
+def _initializeAutoUpdateLogger() -> None:
+    logName = datetime.now().strftime("%Y-%m-%d_%H-%M-%S.%f%z")
+    logPath = CONFIG_DIR / "autoupdate_logs"
+    logPath.mkdir(exist_ok = True)
+
+    initializeLogger(LogSeverity.info, logPath.joinpath(logName).with_suffix(".log"), jsonOutput = False)
